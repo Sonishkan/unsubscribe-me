@@ -2,11 +2,17 @@ from __future__ import print_function
 
 import os.path
 
+# google gmail api imports
 from google.auth.transport.requests import Request
 from google.oauth2.credentials import Credentials
 from google_auth_oauthlib.flow import InstalledAppFlow
 from googleapiclient.discovery import build
 from googleapiclient.errors import HttpError
+
+# for writing to file
+import pandas as pd
+import numpy as np
+from numpy import array, savetxt
 
 
 # If modifying these scopes, delete the file token.json.
@@ -40,13 +46,7 @@ def main():
         service = build('gmail', 'v1', credentials=creds)
         threads = service.users().threads().list(userId='me').execute().get('threads', [])
         message = threads[0].get('id')
-        #print(message)
         msgs = service.users().messages().list(userId='me', q="unsubscribe").execute()  #### STEP 1
-        
-        # find all emails with unsubscribe in the messsage
-            # find all message that have headers of Lis-Unsubscribe
-            # find all email addresses of senders
-#        print(len(msgs))
         
         unsub_links = []
         email_senders=[]
@@ -64,11 +64,15 @@ def main():
             unsub_links.append([i['value'] for i in headers if i["name"]=="List-Unsubscribe"]) ## STEP 2
             email_senders.append([i['value'] for i in headers if i["name"]=="From" or i["name"]=="from"]) ## STEP 2
 
-        num = 1
-        for link, sender in zip(unsub_links, email_senders):
-                print('{} {} {}'.format(num, link, sender))
-                num+=1
-
+# Just to print the data to console <<<<<<
+#        num = 1
+#        for link, sender in zip(unsub_links, email_senders):
+#                print('{} {} {}'.format(num, link, sender))
+#                num+=1
+# >>>>>>>>>>>>
+        
+        writeFile(unsub_links, email_senders)
+        
         unsub_links = list(filter(None, unsub_links))
         email_senders = list(filter(None, email_senders))
 
@@ -84,6 +88,18 @@ def main():
 ## method to get all emails with unsubscribe/optout... in the header and the body
 
 ## method to get the unsub link from email and save to csv file
+
+def writeFile(unsubList, senderList):
+
+
+    a = array(unsubList)
+    b = array(senderList)
+    
+    f = open("unsublist.csv", "w")
+    f.write("{},{}\n".format("List-Unsubscribe", "Sender email"))
+    for x in zip(a, b):
+        f.write("{},{}\n".format(x[0], x[1]))
+    f.close()
 
 
 if __name__ == '__main__':
